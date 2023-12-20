@@ -1,0 +1,104 @@
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public class NumberManipulationGUI {
+    public static void main(String[] args) {
+        // Create JFrame
+        JFrame frame = new JFrame("Number Manipulation GUI");
+        frame.setSize(400, 200);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // Create JPanel
+        JPanel panel = new JPanel();
+        frame.add(panel);
+        placeComponents(panel);
+
+        // Set frame visibility
+        frame.setVisible(true);
+    }
+
+    private static void placeComponents(JPanel panel) {
+        panel.setLayout(null);
+
+        // Create labels
+        JLabel label1 = new JLabel("Enter a number:");
+        label1.setBounds(10, 20, 150, 25);
+        panel.add(label1);
+
+        JLabel label2 = new JLabel("Enter another number:");
+        label2.setBounds(10, 50, 150, 25);
+        panel.add(label2);
+
+        JLabel label3 = new JLabel("Reversed Number:");
+        label3.setBounds(10, 80, 150, 25);
+        panel.add(label3);
+
+        JLabel label4 = new JLabel("Frequency:");
+        label4.setBounds(10, 110, 150, 25);
+        panel.add(label4);
+
+        // Create text fields
+        JTextField textField1 = new JTextField(10);
+        textField1.setBounds(180, 20, 165, 25);
+        panel.add(textField1);
+
+        JTextField textField2 = new JTextField(10);
+        textField2.setBounds(180, 50, 165, 25);
+        panel.add(textField2);
+
+        JTextField textField3 = new JTextField(10);
+        textField3.setBounds(180, 80, 165, 25);
+        textField3.setEditable(false);
+        panel.add(textField3);
+
+        JTextField textField4 = new JTextField(10);
+        textField4.setBounds(180, 110, 165, 25);
+        textField4.setEditable(false);
+        panel.add(textField4);
+
+        // Create OK button
+        JButton okButton = new JButton("OK");
+        okButton.setBounds(10, 140, 80, 25);
+        panel.add(okButton);
+
+        // Add action listener to the OK button
+        okButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Get numbers from text fields
+                int num1 = Integer.parseInt(textField1.getText());
+                int num2 = Integer.parseInt(textField2.getText());
+
+                // Calculate and display reversed number
+                int reversedNum = reverseNumber(num1);
+                textField3.setText(String.valueOf(reversedNum));
+
+                // Calculate and display frequency
+                int frequency = findDigitFrequency(num1, num2);
+                textField4.setText(String.valueOf(frequency));
+            }
+        });
+    }
+
+    private static int reverseNumber(int num) {
+        int reversed = 0;
+        while (num != 0) {
+            reversed = reversed * 10 + num % 10;
+            num /= 10;
+        }
+        return reversed;
+    }
+
+    private static int findDigitFrequency(int num, int digit) {
+        int frequency = 0;
+        while (num != 0) {
+            int lastDigit = num % 10;
+            if (lastDigit == digit) {
+                frequency++;
+            }
+            num /= 10;
+        }
+        return frequency;
+    }
+}
