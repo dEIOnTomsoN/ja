@@ -1,0 +1,215 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class GameGUI extends JFrame {
+    private JTextField nameField, priceField;
+    private JTextArea resultArea;
+    private DatabaseManager databaseManager;
+
+    public GameGUI() {
+        databaseManager = new DatabaseManager();
+
+        // Create and configure your GUI components (labels, text fields, buttons, etc.)
+        JLabel nameLabel = new JLabel("Game Name:");
+        nameField = new JTextField(20);
+
+        JLabel priceLabel = new JLabel("Price:");
+        priceField = new JTextField(10);
+
+        JButton addButton = new JButton("Add Game");
+        addButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String name = nameField.getText();
+                double price = Double.parseDouble(priceField.getText());
+
+                Game game = new Game(name, price);
+                databaseManager.addGame(game);
+
+                refreshResultArea();
+            }
+        });
+
+        JButton updateButton = new JButton("Update Price");
+        updateButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String name = nameField.getText();
+                double newPrice = Double.parseDouble(priceField.getText());
+
+                databaseManager.updateGamePrice(name, newPrice);
+
+                refreshResultArea();
+            }
+        });
+
+        JButton showButton = new JButton("Show Game by Name");
+        showButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String name = nameField.getText();
+                Game game = databaseManager.getGameByName(name);
+
+                if (game != null) {
+                    resultArea.setText(game.toString());
+                } else {
+                    resultArea.setText("Game not found.");
+                }
+            }
+        });
+
+        JButton viewAllButton = new JButton("View All Games");
+        viewAllButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                List<Game> games = databaseManager.getAllGames();
+
+                StringBuilder allGames = new StringBuilder();
+                for (Game game : games) {
+                    allGames.append(game.toString()).append("\n");
+                }
+
+                resultArea.setText(allGames.toString());
+            }
+        });
+
+        resultArea = new JTextArea(10, 30);
+        resultArea.setEditable(false);
+
+        // Add components to the JFrame
+
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        pack();
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+
+    private void refreshResultArea() {
+        List<Game> games = databaseManager.getAllGames();
+
+        StringBuilder allGames = new StringBuilder();
+        for (Game game : games) {
+            allGames.append(game.toString()).append("\n");
+        }
+
+        resultArea.setText(allGames.toString());
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new GameGUI());
+    }
+}
+
+class Game {
+    private String name;
+    private double price;
+
+    public Game(String name, double price) {
+        this.name = name;
+        this.price = price;
+    }
+
+    @Override
+    public String toString() {
+        return "Game{" +
+                "name='" + name + '\'' +
+                ", price=" + price +
+                '}';
+    }
+
+    // Implement getters and setters
+}
+
+class DatabaseManager {
+    private Connection connection;
+    private static final String DB_URL = "jdbc:mysql://your_database_url";
+    private static final String USER = "your_username";
+    private static final String PASSWORD = "your_password";
+
+    public DatabaseManager() {
+        try {
+            connection = DriverManager.getConnection(DB_URL, USER, PASSWORD);
+            createTable(); // Ensure the table exists in the database
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void createTable() {
+        try (Statement statement = connection.createStatement()) {
+            String createTableSQL = "CREATE TABLE IF NOT EXISTS games (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY," +
+                    "name VARCHAR(255) NOT NULL," +
+                    "price DOUBLE NOT NULL)";
+            statement.executeUpdate(createTableSQL);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void addGame(Game game) {
+        String insertSQL = "INSERT INTO games (name, price) VALUES (?, ?)";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(insertSQL)) {
+            preparedStatement.setString(1, game.getName());
+            preparedStatement.setDouble(2, game.getPrice());
+
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateGamePrice(String name, double newPrice) {
+        String updateSQL = "UPDATE games SET price=? WHERE name=?";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(updateSQL)) {
+            preparedStatement.setDouble(1, newPrice);
+            preparedStatement.setString(2, name);
+
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public Game getGameByName(String name) {
+        String selectSQL = "SELECT * FROM games WHERE name=?";
+        Game game = null;
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(selectSQL)) {
+            preparedStatement.setString(1, name);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                game = new Game(resultSet.getString("name"), resultSet.getDouble("price"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return game;
+    }
+
+    public List<Game> getAllGames() {
+        String selectAllSQL = "SELECT * FROM games";
+        List<Game> games = new ArrayList<>();
+
+        try (Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(selectAllSQL);
+
+            while (resultSet.next()) {
+                games.add(new Game(resultSet.getString("name"), resultSet.getDouble("price")));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return games;
+    }
+}
